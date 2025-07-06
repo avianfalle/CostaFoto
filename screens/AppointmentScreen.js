@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
-import { View, Text, FlatList, Button, TextInput, Alert } from 'react-native';
-import * as Google from 'expo-auth-session/providers/google';
+import { View, Text, FlatList, Button, TextInput, Alert, Platform } from 'react-native';
 import * as WebBrowser from 'expo-web-browser';
+import * as Google from 'expo-auth-session/providers/google';
 import { makeRedirectUri, ResponseType } from 'expo-auth-session';
 
 WebBrowser.maybeCompleteAuthSession();
@@ -17,10 +17,11 @@ export default function AppointmentScreen() {
 
   const redirectUri = makeRedirectUri({
     native: 'costafoto://redirect',
+    useProxy: Platform.select({ web: true, default: false }),
   });
 
   const [request, response, promptAsync] = Google.useAuthRequest({
-    clientId: '610280230360-2rdelootr8i08hb22t547b72a1aagkv2.apps.googleusercontent.com',
+    clientId: '610280230360-if53i9qiv91p2es21ubvqol9j40dqech.apps.googleusercontent.com',
     scopes: ['https://www.googleapis.com/auth/calendar.events', 'email'],
     redirectUri,
     responseType: ResponseType.Token,
@@ -30,7 +31,7 @@ export default function AppointmentScreen() {
     if (response?.type === 'success') {
       const { access_token } = response.params;
       setUserToken(access_token);
-      alert('Accesso Google riuscito!');
+      Alert.alert('Accesso Google riuscito!');
     }
   }, [response]);
 
@@ -51,8 +52,8 @@ export default function AppointmentScreen() {
   }, []);
 
   const handleCreateEvent = async () => {
-    if (!userToken) return alert('Devi accedere con Google prima di prenotare.');
-    if (!name || !dateTime) return alert('Inserisci nome e data/ora.');
+    if (!userToken) return Alert.alert('Errore', 'Devi accedere con Google prima di prenotare.');
+    if (!name || !dateTime) return Alert.alert('Errore', 'Inserisci nome e data/ora.');
 
     try {
       const event = {
@@ -81,16 +82,16 @@ export default function AppointmentScreen() {
 
       const data = await response.json();
       if (data.id) {
-        Alert.alert('Prenotazione creata con successo!');
+        Alert.alert('Successo', 'Prenotazione creata con successo!');
         setName('');
         setDateTime('');
       } else {
         console.error('Errore:', data);
-        alert('Errore nella creazione evento');
+        Alert.alert('Errore', 'Errore nella creazione evento');
       }
     } catch (err) {
       console.error(err);
-      alert('Errore nella richiesta');
+      Alert.alert('Errore', 'Errore nella richiesta');
     }
   };
 
