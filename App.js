@@ -1,23 +1,24 @@
+import 'react-native-gesture-handler';
+import React from 'react';
 import { NavigationContainer } from '@react-navigation/native';
-import { createNativeStackNavigator } from '@react-navigation/native-stack';
+import { createStackNavigator } from '@react-navigation/stack';
 import HomeScreen from './screens/HomeScreen';
 import RequestQuoteScreen from './screens/RequestQuoteScreen';
 import AppointmentScreen from './screens/AppointmentScreen';
 import AdminLoginScreen from './screens/AdminLoginScreen';
 import AdminDashboardScreen from './screens/AdminDashboardScreen';
-import './firebase';
 
-const Stack = createNativeStackNavigator();
+const Stack = createStackNavigator();
 
 export default function App() {
   return (
     <NavigationContainer>
       <Stack.Navigator initialRouteName="Home">
         <Stack.Screen name="Home" component={HomeScreen} />
-        <Stack.Screen name="RequestQuote" component={RequestQuoteScreen} />
-        <Stack.Screen name="Appointment" component={AppointmentScreen} />
-        <Stack.Screen name="AdminLogin" component={AdminLoginScreen} />
-        <Stack.Screen name="AdminDashboard" component={AdminDashboardScreen} />
+        <Stack.Screen name="Preventivo" component={RequestQuoteScreen} />
+        <Stack.Screen name="Appuntamenti" component={AppointmentScreen} />
+        <Stack.Screen name="LoginAdmin" component={AdminLoginScreen} />
+        <Stack.Screen name="Dashboard" component={AdminDashboardScreen} />
       </Stack.Navigator>
     </NavigationContainer>
   );

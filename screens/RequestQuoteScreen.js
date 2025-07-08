@@ -1,38 +1,58 @@
 import React, { useState } from 'react';
-import { View, TextInput, Button, Text, Alert } from 'react-native';
+import { View, Text, TextInput, Button, Alert, StyleSheet } from 'react-native';
 import { db } from '../firebase';
-import { collection, addDoc, Timestamp } from 'firebase/firestore';
+import { collection, addDoc } from 'firebase/firestore';
 
 export default function RequestQuoteScreen() {
-  const [address, setAddress] = useState('');
-  const [rooms, setRooms] = useState('');
-  const [service, setService] = useState('');
+  const [name, setName] = useState('');
+  const [email, setEmail] = useState('');
+  const [details, setDetails] = useState('');
 
   const handleSubmit = async () => {
+    if (!name || !email || !details) {
+      Alert.alert('Errore', 'Compila tutti i campi');
+      return;
+    }
     try {
-      await addDoc(collection(db, 'quoteRequests'), {
-        address,
-        rooms,
-        service,
-        createdAt: Timestamp.now(),
-      });
-      Alert.alert('Richiesta inviata!', 'Riceverai presto un preventivo.');
-      setAddress('');
-      setRooms('');
-      setService('');
-    } catch (error) {
-      Alert.alert('Errore', 'Impossibile inviare la richiesta.');
-      console.error(error);
+      await addDoc(collection(db, 'quotes'), { name, email, details, createdAt: new Date() });
+      Alert.alert('Successo', 'Richiesta inviata');
+      setName(''); setEmail(''); setDetails('');
+    } catch (e) {
+      console.error(e);
+      Alert.alert('Errore', 'Impossibile inviare richiesta');
     }
   };
 
   return (
-    <View style={{ padding: 20 }}>
-      <Text>Richiedi un Preventivo</Text>
-      <TextInput placeholder="Indirizzo dell'immobile" value={address} onChangeText={setAddress} style={{ borderBottomWidth: 1, marginBottom: 10 }} />
-      <TextInput placeholder="Numero stanze" keyboardType="numeric" value={rooms} onChangeText={setRooms} style={{ borderBottomWidth: 1, marginBottom: 10 }} />
-      <TextInput placeholder="Tipo di servizio (foto, drone...)" value={service} onChangeText={setService} style={{ borderBottomWidth: 1, marginBottom: 10 }} />
-      <Button title="Invia richiesta" onPress={handleSubmit} />
+    <View style={styles.container}>
+      <Text style={styles.title}>Richiedi un Preventivo</Text>
+      <TextInput
+        placeholder="Nome"
+        value={name}
+        onChangeText={setName}
+        style={styles.input}
+      />
+      <TextInput
+        placeholder="Email"
+        value={email}
+        onChangeText={setEmail}
+        keyboardType="email-address"
+        style={styles.input}
+      />
+      <TextInput
+        placeholder="Dettagli"
+        value={details}
+        onChangeText={setDetails}
+        multiline
+        style={[styles.input, { height: 100 }]}
+      />
+      <Button title="Invia Richiesta" onPress={handleSubmit} />
     </View>
   );
 }
+
+const styles = StyleSheet.create({
+  container: { flex: 1, padding: 16 },
+  title: { fontSize: 20, fontWeight: 'bold', marginBottom: 16 },
+  input: { borderWidth: 1, borderColor: '#ccc', borderRadius: 4, padding: 8, marginBottom: 12 }
+});

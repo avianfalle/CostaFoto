@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { View, Text, FlatList, Button, TextInput, Alert, Platform } from 'react-native';
+import { View, Text, FlatList, Button, TextInput, Alert, Platform, StyleSheet } from 'react-native';
 import * as WebBrowser from 'expo-web-browser';
 import * as Google from 'expo-auth-session/providers/google';
 import { makeRedirectUri, ResponseType } from 'expo-auth-session';
@@ -13,15 +13,14 @@ export default function AppointmentScreen() {
   const [dateTime, setDateTime] = useState('');
 
   const calendarId = 'avianfalle@gmail.com';
-  const apiKey = 'AIzaSyCz1u2kHXFuRHX3drRG3oQG677XvvoSkpw';
+  const apiKey = 'YOUR_API_KEY_HERE';
 
   const redirectUri = makeRedirectUri({
     native: 'costafoto://redirect',
     useProxy: Platform.select({ web: true, default: false }),
   });
-
   const [request, response, promptAsync] = Google.useAuthRequest({
-    clientId: '610280230360-if53i9qiv91p2es21ubvqol9j40dqech.apps.googleusercontent.com',
+    clientId: 'YOUR_ANDROID_CLIENT_ID',
     scopes: ['https://www.googleapis.com/auth/calendar.events', 'email'],
     redirectUri,
     responseType: ResponseType.Token,
@@ -29,101 +28,77 @@ export default function AppointmentScreen() {
 
   useEffect(() => {
     if (response?.type === 'success') {
-      const { access_token } = response.params;
-      setUserToken(access_token);
-      Alert.alert('Accesso Google riuscito!');
+      setUserToken(response.params.access_token);
+      Alert.alert('Successo', 'Accesso Google riuscito');
     }
   }, [response]);
 
   useEffect(() => {
-    const fetchEvents = async () => {
-      const now = new Date().toISOString();
-      const url = `https://www.googleapis.com/calendar/v3/calendars/${calendarId}/events?key=${apiKey}&timeMin=${now}`;
+    if (!userToken) return;
+    (async () => {
       try {
-        const response = await fetch(url);
-        const data = await response.json();
-        setEvents(data.items || []);
-      } catch (error) {
-        console.error('Errore nel recupero eventi calendario:', error);
+        const now = new Date().toISOString();
+        const res = await fetch(
+          `https://www.googleapis.com/calendar/v3/calendars/${calendarId}/events?key=${apiKey}&timeMin=${now}`,
+          { headers: { Authorization: `Bearer ${userToken}` } }
+        );
+        const json = await res.json();
+        setEvents(json.items || []);
+      } catch (e) {
+        console.error(e);
       }
-    };
+    })();
+  }, [userToken]);
 
-    fetchEvents();
-  }, []);
-
-  const handleCreateEvent = async () => {
-    if (!userToken) return Alert.alert('Errore', 'Devi accedere con Google prima di prenotare.');
-    if (!name || !dateTime) return Alert.alert('Errore', 'Inserisci nome e data/ora.');
-
+  const createEvent = async () => {
+    if (!userToken) return Alert.alert('Errore', 'Accedi prima con Google');
+    if (!name || !dateTime) return Alert.alert('Errore', 'Compila tutti i campi');
     try {
       const event = {
         summary: `Prenotazione - ${name}`,
-        start: {
-          dateTime,
-          timeZone: 'Europe/Rome',
-        },
-        end: {
-          dateTime: new Date(new Date(dateTime).getTime() + 30 * 60 * 1000).toISOString(),
-          timeZone: 'Europe/Rome',
-        },
+        start: { dateTime, timeZone: 'Europe/Rome' },
+        end: { dateTime: new Date(new Date(dateTime).getTime() + 30*60000).toISOString(), timeZone: 'Europe/Rome' }
       };
-
-      const response = await fetch(
+      const res = await fetch(
         `https://www.googleapis.com/calendar/v3/calendars/${calendarId}/events`,
-        {
-          method: 'POST',
-          headers: {
-            Authorization: `Bearer ${userToken}`,
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify(event),
-        }
+        { method: 'POST', headers: { Authorization: `Bearer ${userToken}`, 'Content-Type': 'application/json' }, body: JSON.stringify(event) }
       );
-
-      const data = await response.json();
-      if (data.id) {
-        Alert.alert('Successo', 'Prenotazione creata con successo!');
-        setName('');
-        setDateTime('');
-      } else {
-        console.error('Errore:', data);
-        Alert.alert('Errore', 'Errore nella creazione evento');
-      }
-    } catch (err) {
-      console.error(err);
-      Alert.alert('Errore', 'Errore nella richiesta');
+      const json = await res.json();
+      if (json.id) Alert.alert('Successo', 'Appuntamento creato');
+      else throw new Error('Errore API');
+    } catch (e) {
+      console.error(e);
+      Alert.alert('Errore', 'Impossibile creare evento');
     }
   };
 
   return (
-    <View style={{ padding: 20 }}>
-      <Text style={{ fontSize: 18, fontWeight: 'bold', marginBottom: 10 }}>Prossimi appuntamenti</Text>
+    <View style={styles.container}>
+      <Text style={styles.title}>Prossimi Appuntamenti</Text>
       <FlatList
         data={events}
-        keyExtractor={(item) => item.id}
+        keyExtractor={item => item.id}
         renderItem={({ item }) => (
-          <View style={{ marginBottom: 15 }}>
-            <Text style={{ fontWeight: 'bold' }}>{item.summary}</Text>
+          <View style={styles.eventItem}>
+            <Text style={styles.eventTitle}>{item.summary}</Text>
             <Text>{item.start?.dateTime || item.start?.date}</Text>
           </View>
         )}
       />
-      <Text style={{ fontWeight: 'bold', marginTop: 20 }}>Prenota un nuovo appuntamento</Text>
-      <TextInput
-        placeholder="Nome"
-        value={name}
-        onChangeText={setName}
-        style={{ borderWidth: 1, marginVertical: 5, padding: 8 }}
-      />
-      <TextInput
-        placeholder="Data e ora (es: 2025-07-05T15:00:00)"
-        value={dateTime}
-        onChangeText={setDateTime}
-        style={{ borderWidth: 1, marginBottom: 10, padding: 8 }}
-      />
+      <Text style={styles.title}>Nuovo Appuntamento</Text>
+      <TextInput placeholder="Nome" value={name} onChangeText={setName} style={styles.input} />
+      <TextInput placeholder="Data/Ora (2025-07-05T15:00:00)" value={dateTime} onChangeText={setDateTime} style={styles.input} />
       <Button title="Accedi con Google" disabled={!request} onPress={() => promptAsync()} />
       <View style={{ marginVertical: 10 }} />
-      <Button title="Crea prenotazione" onPress={handleCreateEvent} />
+      <Button title="Crea Appuntamento" onPress={createEvent} />
     </View>
   );
 }
+
+const styles = StyleSheet.create({
+  container: { flex: 1, padding: 16 },
+  title: { fontSize: 20, fontWeight: 'bold', marginBottom: 12 },
+  input: { borderWidth: 1, borderColor: '#ccc', borderRadius: 4, padding: 8, marginBottom: 12 },
+  eventItem: { marginBottom: 10 },
+  eventTitle: { fontWeight: 'bold' }
+});

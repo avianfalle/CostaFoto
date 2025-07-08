@@ -1,24 +1,37 @@
-import React, { useState } from 'react';
-import { View, Text, TextInput, Button, Alert } from 'react-native';
 
-export default function AdminLoginScreen({ navigation }) {
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
+import React, { useEffect, useState } from 'react';
+import { View, Text, FlatList, StyleSheet } from 'react-native';
+import { db } from '../firebase';
+import { collection, getDocs } from 'firebase/firestore';
 
-  const handleLogin = () => {
-    if (email === 'admin@costafoto.it' && password === 'costa123') {
-      navigation.navigate('AdminDashboard');
-    } else {
-      Alert.alert('Accesso negato', 'Credenziali non valide');
-    }
-  };
+export default function AdminDashboardScreen() {
+  const [quotes, setQuotes] = useState([]);
+
+  useEffect(() => {
+    (async () => {
+      const snapshot = await getDocs(collection(db, 'quotes'));
+      setQuotes(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })));
+    })();
+  }, []);
 
   return (
-    <View style={{ padding: 20 }}>
-      <Text style={{ fontSize: 18, marginBottom: 10 }}>Login Agenzia</Text>
-      <TextInput placeholder="Email" value={email} onChangeText={setEmail} style={{ borderBottomWidth: 1, marginBottom: 10 }} />
-      <TextInput placeholder="Password" value={password} onChangeText={setPassword} secureTextEntry style={{ borderBottomWidth: 1, marginBottom: 10 }} />
-      <Button title="Accedi" onPress={handleLogin} />
+    <View style={styles.container}>
+      <Text style={styles.title}>Richieste Preventivo</Text>
+      <FlatList
+        data={quotes}
+        keyExtractor={item => item.id}
+        renderItem={({ item }) => (
+          <View style={styles.item}>
+            <Text>{item.name}: {item.details}</Text>
+          </View>
+        )}
+      />
     </View>
   );
 }
+
+const Styles = StyleSheet.create({
+  container: { flex: 1, padding: 16 },
+  title: { fontSize: 20, fontWeight: 'bold', marginBottom: 16 },
+  item: { padding: 8, borderBottomWidth: 1, borderColor: '#eee' },
+});
