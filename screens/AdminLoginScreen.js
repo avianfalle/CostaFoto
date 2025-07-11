@@ -1,37 +1,29 @@
+import React, { useState } from 'react';
+import { View, TextInput, Button, Alert, StyleSheet } from 'react-native';
 
-import React, { useEffect, useState } from 'react';
-import { View, Text, FlatList, StyleSheet } from 'react-native';
-import { db } from '../firebase';
-import { collection, getDocs } from 'firebase/firestore';
-
-export default function AdminDashboardScreen() {
-  const [quotes, setQuotes] = useState([]);
-
-  useEffect(() => {
-    (async () => {
-      const snapshot = await getDocs(collection(db, 'quotes'));
-      setQuotes(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })));
-    })();
-  }, []);
+export default function AdminLoginScreen({ navigation }) {
+  const [pass, setPass] = useState('');
+  const handleLogin = () => {
+    if (pass === 'YOUR_ADMIN_PASSWORD') {
+      navigation.replace('Dashboard');
+    } else Alert.alert('Password errata');
+  };
 
   return (
     <View style={styles.container}>
-      <Text style={styles.title}>Richieste Preventivo</Text>
-      <FlatList
-        data={quotes}
-        keyExtractor={item => item.id}
-        renderItem={({ item }) => (
-          <View style={styles.item}>
-            <Text>{item.name}: {item.details}</Text>
-          </View>
-        )}
+      <TextInput
+        placeholder="Password"
+        secureTextEntry
+        value={pass}
+        onChangeText={setPass}
+        style={styles.input}
       />
+      <Button title="Accedi" onPress={handleLogin} />
     </View>
   );
 }
 
-const Styles = StyleSheet.create({
-  container: { flex: 1, padding: 16 },
-  title: { fontSize: 20, fontWeight: 'bold', marginBottom: 16 },
-  item: { padding: 8, borderBottomWidth: 1, borderColor: '#eee' },
+const styles = StyleSheet.create({
+  container: { flex: 1, justifyContent: 'center', padding: 20 },
+  input: { borderWidth: 1, marginBottom: 10, padding: 8 },
 });

@@ -9,7 +9,6 @@ import AdminLoginScreen from './screens/AdminLoginScreen';
 import AdminDashboardScreen from './screens/AdminDashboardScreen';
 
 const Stack = createStackNavigator();
-
 export default function App() {
   return (
     <NavigationContainer>

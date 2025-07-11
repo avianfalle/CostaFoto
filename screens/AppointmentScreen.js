@@ -1,5 +1,14 @@
 import React, { useEffect, useState } from 'react';
-import { View, Text, FlatList, Button, TextInput, Alert, Platform, StyleSheet } from 'react-native';
+import {
+  View,
+  Text,
+  FlatList,
+  Button,
+  TextInput,
+  Alert,
+  Platform,
+  StyleSheet,
+} from 'react-native';
 import * as WebBrowser from 'expo-web-browser';
 import * as Google from 'expo-auth-session/providers/google';
 import { makeRedirectUri, ResponseType } from 'expo-auth-session';
@@ -19,6 +28,7 @@ export default function AppointmentScreen() {
     native: 'costafoto://redirect',
     useProxy: Platform.select({ web: true, default: false }),
   });
+
   const [request, response, promptAsync] = Google.useAuthRequest({
     clientId: 'YOUR_ANDROID_CLIENT_ID',
     scopes: ['https://www.googleapis.com/auth/calendar.events', 'email'],
@@ -57,15 +67,28 @@ export default function AppointmentScreen() {
       const event = {
         summary: `Prenotazione - ${name}`,
         start: { dateTime, timeZone: 'Europe/Rome' },
-        end: { dateTime: new Date(new Date(dateTime).getTime() + 30*60000).toISOString(), timeZone: 'Europe/Rome' }
+        end: {
+          dateTime: new Date(new Date(dateTime).getTime() + 30 * 60000).toISOString(),
+          timeZone: 'Europe/Rome',
+        },
       };
       const res = await fetch(
         `https://www.googleapis.com/calendar/v3/calendars/${calendarId}/events`,
-        { method: 'POST', headers: { Authorization: `Bearer ${userToken}`, 'Content-Type': 'application/json' }, body: JSON.stringify(event) }
+        {
+          method: 'POST',
+          headers: {
+            Authorization: `Bearer ${userToken}`,
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify(event),
+        }
       );
       const json = await res.json();
-      if (json.id) Alert.alert('Successo', 'Appuntamento creato');
-      else throw new Error('Errore API');
+      if (json.id) {
+        Alert.alert('Successo', 'Appuntamento creato');
+        setName('');
+        setDateTime('');
+      } else throw new Error('Errore API');
     } catch (e) {
       console.error(e);
       Alert.alert('Errore', 'Impossibile creare evento');
@@ -86,9 +109,23 @@ export default function AppointmentScreen() {
         )}
       />
       <Text style={styles.title}>Nuovo Appuntamento</Text>
-      <TextInput placeholder="Nome" value={name} onChangeText={setName} style={styles.input} />
-      <TextInput placeholder="Data/Ora (2025-07-05T15:00:00)" value={dateTime} onChangeText={setDateTime} style={styles.input} />
-      <Button title="Accedi con Google" disabled={!request} onPress={() => promptAsync()} />
+      <TextInput
+        placeholder="Nome"
+        value={name}
+        onChangeText={setName}
+        style={styles.input}
+      />
+      <TextInput
+        placeholder="Data/Ora (2025-07-05T15:00:00)"
+        value={dateTime}
+        onChangeText={setDateTime}
+        style={styles.input}
+      />
+      <Button
+        title="Accedi con Google"
+        disabled={!request}
+        onPress={() => promptAsync()}
+      />
       <View style={{ marginVertical: 10 }} />
       <Button title="Crea Appuntamento" onPress={createEvent} />
     </View>
@@ -98,7 +135,13 @@ export default function AppointmentScreen() {
 const styles = StyleSheet.create({
   container: { flex: 1, padding: 16 },
   title: { fontSize: 20, fontWeight: 'bold', marginBottom: 12 },
-  input: { borderWidth: 1, borderColor: '#ccc', borderRadius: 4, padding: 8, marginBottom: 12 },
+  input: {
+    borderWidth: 1,
+    borderColor: '#ccc',
+    borderRadius: 4,
+    padding: 8,
+    marginBottom: 12,
+  },
   eventItem: { marginBottom: 10 },
-  eventTitle: { fontWeight: 'bold' }
+  eventTitle: { fontWeight: 'bold' },
 });

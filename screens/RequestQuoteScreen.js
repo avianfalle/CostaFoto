@@ -1,58 +1,48 @@
 import React, { useState } from 'react';
-import { View, Text, TextInput, Button, Alert, StyleSheet } from 'react-native';
+import { View, TextInput, Button, Alert, StyleSheet } from 'react-native';
 import { db } from '../firebase';
-import { collection, addDoc } from 'firebase/firestore';
+import { collection, addDoc, serverTimestamp } from 'firebase/firestore';
 
-export default function RequestQuoteScreen() {
-  const [name, setName] = useState('');
-  const [email, setEmail] = useState('');
-  const [details, setDetails] = useState('');
+export default function RequestQuoteScreen({ navigation }) {
+  const [address, setAddress] = useState('');
+  const [rooms, setRooms] = useState('');
 
   const handleSubmit = async () => {
-    if (!name || !email || !details) {
-      Alert.alert('Errore', 'Compila tutti i campi');
-      return;
-    }
+    if (!address || !rooms) return Alert.alert('Compila tutti i campi');
     try {
-      await addDoc(collection(db, 'quotes'), { name, email, details, createdAt: new Date() });
-      Alert.alert('Successo', 'Richiesta inviata');
-      setName(''); setEmail(''); setDetails('');
+      await addDoc(collection(db, 'quoteRequests'), {
+        address,
+        rooms,
+        createdAt: serverTimestamp(),
+      });
+      Alert.alert('Richiesta inviata');
+      navigation.goBack();
     } catch (e) {
-      console.error(e);
-      Alert.alert('Errore', 'Impossibile inviare richiesta');
+      Alert.alert('Errore invio');
     }
   };
 
   return (
     <View style={styles.container}>
-      <Text style={styles.title}>Richiedi un Preventivo</Text>
       <TextInput
-        placeholder="Nome"
-        value={name}
-        onChangeText={setName}
+        placeholder="Indirizzo"
+        value={address}
+        onChangeText={setAddress}
         style={styles.input}
       />
       <TextInput
-        placeholder="Email"
-        value={email}
-        onChangeText={setEmail}
-        keyboardType="email-address"
+        placeholder="Numero stanze"
+        value={rooms}
+        onChangeText={setRooms}
+        keyboardType="numeric"
         style={styles.input}
       />
-      <TextInput
-        placeholder="Dettagli"
-        value={details}
-        onChangeText={setDetails}
-        multiline
-        style={[styles.input, { height: 100 }]}
-      />
-      <Button title="Invia Richiesta" onPress={handleSubmit} />
+      <Button title="Invia" onPress={handleSubmit} />
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, padding: 16 },
-  title: { fontSize: 20, fontWeight: 'bold', marginBottom: 16 },
-  input: { borderWidth: 1, borderColor: '#ccc', borderRadius: 4, padding: 8, marginBottom: 12 }
+  container: { flex: 1, padding: 20, justifyContent: 'center' },
+  input: { borderWidth: 1, marginBottom: 10, padding: 8 },
 });
